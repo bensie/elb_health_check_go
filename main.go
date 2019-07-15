@@ -107,7 +107,7 @@ func mainHandler(w http.ResponseWriter, r *http.Request) {
 func makeRequest(hostname string, ch chan<- *HTTPResponse) {
 	client := &http.Client{}
 
-	req, _ := http.NewRequest("HEAD", "http://127.0.0.1:80/health_check", nil)
+	req, _ := http.NewRequest("HEAD", "http://0.0.0.0:80/health_check", nil)
 	req.Host = hostname
 	req.Header.Add("X-Forwarded-Proto", "https")
 
