@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -9,23 +10,32 @@ import (
 	"strings"
 )
 
+// Hostnames contain the list of hosts that are being checked agains.
 var Hostnames = strings.Split(os.Getenv("HEALTH_CHECK_HOSTNAMES"), ",")
 
-type HttpResponse struct {
+// HTTPResponse contains the http response data to the specified host
+type HTTPResponse struct {
 	hostname string
 	response *http.Response
 	err      error
 	check    string
 }
 
+// CheckResponse contains the HTTP status response from the specified host
 type CheckResponse struct {
 	Status int    `json:"status"`
 	Check  string `json:"check"`
 }
 
 func main() {
+	port := ""
+	flag.StringVar(&port, "port", "9292", "the port to listen on")
+
+	flag.Parse()
+
+	fmt.Fprintln(os.Stderr, "starting listener on port", port)
 	http.HandleFunc("/", mainHandler)
-	log.Fatal(http.ListenAndServe(":9292", nil))
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", port), nil))
 }
 
 func mainHandler(w http.ResponseWriter, r *http.Request) {
@@ -37,13 +47,13 @@ func mainHandler(w http.ResponseWriter, r *http.Request) {
 	hostnamesAllowedToFail := strings.Split(allowedToFailQueryParam, ",")
 	hostnamesMustSucceed := strings.Split(mustSucceedQueryParam, ",")
 
-	ch := make(chan *HttpResponse, len(Hostnames))
+	ch := make(chan *HTTPResponse, len(Hostnames))
 	for _, hostname := range Hostnames {
 		go makeRequest(hostname, ch)
 	}
 
 	// Block until we get responses for all hostnames
-	responses := []*HttpResponse{}
+	responses := []*HTTPResponse{}
 	for range Hostnames {
 		responses = append(responses, <-ch)
 	}
@@ -57,7 +67,7 @@ func mainHandler(w http.ResponseWriter, r *http.Request) {
 		httpResponseData[r.hostname] = CheckResponse{code, r.check}
 	}
 
-	filteredResponses := []*HttpResponse{}
+	filteredResponses := []*HTTPResponse{}
 	if len(hostnamesAllowedToFail) > 0 {
 		for _, r := range responses {
 			if !contains(hostnamesAllowedToFail, r.hostname) {
@@ -94,11 +104,11 @@ func mainHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, string(json))
 }
 
-func makeRequest(hostname string, ch chan<- *HttpResponse) {
+func makeRequest(hostname string, ch chan<- *HTTPResponse) {
 	client := &http.Client{}
 
 	req, _ := http.NewRequest("HEAD", "http://0.0.0.0:80/health_check", nil)
-	req.Header.Add("Host", hostname)
+	req.Host = hostname
 	req.Header.Add("X-Forwarded-Proto", "https")
 
 	resp, err := client.Do(req)
@@ -112,7 +122,7 @@ func makeRequest(hostname string, ch chan<- *HttpResponse) {
 		}
 	}
 
-	ch <- &HttpResponse{hostname, resp, err, check}
+	ch <- &HTTPResponse{hostname, resp, err, check}
 }
 
 func contains(stringSlice []string, searchString string) bool {
