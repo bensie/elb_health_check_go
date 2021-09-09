@@ -13,6 +13,9 @@ import (
 // Hostnames contain the list of hosts that are being checked agains.
 var Hostnames = strings.Split(os.Getenv("HEALTH_CHECK_HOSTNAMES"), ",")
 
+// The port the host is listening on, usually 80
+var HostPort = os.Getenv("HEALTH_CHECK_HOST_PORT")
+
 // HTTPResponse contains the http response data to the specified host
 type HTTPResponse struct {
 	hostname string
@@ -107,7 +110,12 @@ func mainHandler(w http.ResponseWriter, r *http.Request) {
 func makeRequest(hostname string, ch chan<- *HTTPResponse) {
 	client := &http.Client{}
 
-	req, _ := http.NewRequest("HEAD", "http://0.0.0.0:80/health_check", nil)
+	if len(HostPort) == 0 {
+		HostPort = "80"
+	}
+
+	check_url := fmt.Sprintf("http://0.0.0.0:%s/health_check", HostPort)
+	req, _ := http.NewRequest("HEAD", check_url, nil)
 	req.Host = hostname
 	req.Header.Add("X-Forwarded-Proto", "https")
 
