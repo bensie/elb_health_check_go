@@ -110,7 +110,7 @@ func mainHandler(w http.ResponseWriter, r *http.Request) {
 func makeRequest(hostname string, ch chan<- *HTTPResponse) {
 	client := &http.Client{}
 
-	if len(HostPort) == 0 {
+	if HostPort == "" {
 		HostPort = "80"
 	}
 
