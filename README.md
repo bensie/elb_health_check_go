@@ -1,12 +1,12 @@
 # ELB Health Check
 
-AWS elastic load balancers and application load balancers are awesome, but their health checks are pretty dumb. It's not possible to specify any headers (such as the Host header), making it impossible for virtual hosts to be taken into account when determining if the host is healthy or not.
+AWS elastic load balancers and application load balancers are awesome, but it's not possible to specify any headers (such as the Host header) to allow for virtual hosts to be taken into account when determining if the host is healthy or not.
 
 ## What problems does this app intend to solve?
 
-* A health check pinging the default virtualhost is no meaningful indication of whether or not your app is up or down
-* You have multiple applications that all must be up for the ELB/ALB to consider your host healthy
-* Hitting port 80 with default ELB health checks triggers a 301 redirect to HTTPS even though HTTPS is terminated at the ELB :facepalm:
+- A health check pinging the default virtualhost is not a meaningful indication of whether or not your app is up or down.
+- You have multiple applications that all must be up for the ELB/ALB to consider your host healthy.
+- Hitting port 80 with default ELB health checks triggers a 301 redirect to HTTPS even though HTTPS is terminated at the ELB.
 
 ## How do I use this?
 
@@ -58,10 +58,10 @@ In the above case, a health check ping will hit _both_ hostnames and the results
 
 ## Caveats
 
-* Requests to applications are made concurrently to keep things as quick as possible, but if you have oodles of applications running on a server, this may time out before it's able to respond to ELB. You can tune the `HealthCheckTimeoutSeconds` setting if necessary.
-* If your application spawns processes from the first request after a timeout, keep in mind this is going to hit all the apps at the same time, which could cause load spikes and/or timeouts.
-* You better monitor this process and make sure it stays running! If it isn't running, your health check is going to fail and the node will be taken out of service.
+- Requests to applications are made concurrently to keep things as quick as possible, but if you have oodles of applications running on a server, this may time out before it's able to respond to ELB. You can tune the `HealthCheckTimeoutSeconds` setting if necessary.
+- If your application spawns processes from the first request after a timeout, keep in mind this is going to hit all the apps at the same time, which could cause load spikes and/or timeouts.
+- You better monitor this process and make sure it stays running! If it isn't running, your health check is going to fail and the node will be taken out of service.
 
 ## Copyright
 
-&copy; 2017 James Miller
+&copy; 2022 James Miller
